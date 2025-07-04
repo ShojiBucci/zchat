@@ -1,0 +1,109 @@
+<!doctype html>
+<html><head><title>Zwift Message</title>
+<base target="_new">
+<link rel="shortcut icon" href="{{ static_url('favicon.ico') }}">
+<script>
+  var ws;
+  var prev_pos;
+  prev_pos = 10000;
+  currentItemNo = 0;
+  limitItemNo = 200; // 1ページの表示件数
+	const host = window.location.host;  // current host
+  ws = new WebSocket("ws://" + host + "/websocket");
+  ws.onmessage = function(ev) {
+    // 受信したメッセージを追加  
+    document.getElementById('variable').innerHTML += ev.data ;
+
+    var element = document.documentElement;
+    
+    // 最下部(削除前)
+    var bottomOffsetPre = element.scrollHeight - element.clientHeight;
+    // 現在地(削除前)
+    var OffsetPre = window.pageYOffset;
+
+    // 古い(表示件数超え)メッセージを削除
+    currentItemNo = currentItemNo + 1;
+    if(currentItemNo >= limitItemNo){
+      itemTag = "itemTag_" + (currentItemNo - limitItemNo)
+      let list_element = document.getElementById(itemTag);
+      if(list_element != null)
+        list_element.remove();
+    }
+
+    // 最下部(削除後)
+    var bottomOffsetPost = element.scrollHeight - element.clientHeight;
+    // 削除で消えた上部の高さ
+    var OffsetDelta = bottomOffsetPre - bottomOffsetPost;
+    // その分、現在地を上にずらす
+    var OffsetPost = OffsetPre - OffsetDelta;
+
+    if(bottomOffsetPost < (OffsetPost + 100)){
+      // 少しスクロールするだけで最下部になるなら、スクロールする
+      window.scroll(0, bottomOffsetPost);
+    }else{
+      // (そうでなければ、意図的に遡ったチャットを見てるので)
+      window.scroll(0, OffsetPost);
+    }
+    
+  }
+
+  // 発言を Clipboard にコピー
+  function copyToClipboard(copyTarget) {
+    // コピー対象をJavaScript上で変数として定義する
+    var copyText = document.getElementById(copyTarget).innerText;
+	  var area = document.createElement("textarea");
+
+    //p要素の内容をtextareaに記述
+    area.textContent = copyText;
+
+    //生成したものをdocumentに追加
+    document.body.appendChild(area);
+
+    //選択/コピーして・・
+    area.select();
+    document.execCommand("copy");
+
+    //すぐに消す。
+    document.body.removeChild(area);
+  }
+
+  // 発言を翻訳
+  async function translateText(idTarget) {
+    // コピー対象
+    var preText = document.getElementById(idTarget).innerText.trim();
+
+    const apiKey = "===OpenAI_key==="; // 
+
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        model: "gpt-3.5-turbo",
+        messages: [
+          { role: "system", content: `You are a translator that translates text into ===LANGUAGE===.` },
+          { role: "user", content: preText }
+        ],
+        temperature: 0.3
+      })
+    });
+
+    if (!response.ok) {
+      return;
+    }
+
+    const data = await response.json();
+    const translated = data.choices[0].message.content.trim();
+    document.getElementById(idTarget).innerText = preText + " ** " + translated;
+
+  }
+
+</script>
+</head><body id="main_body">
+Zwift Message<br>
+<hr>
+    <tt>
+<span id="variable"></span>
+</tt></body></html>

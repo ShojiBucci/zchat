@@ -1,0 +1,11 @@
+{
+	"zwift_id":	123456,
+    "zwift_email": "abc@def.com",
+    "zwift_password": "secret_key_1234",
+	"my_name":	"YourName",
+	"log_path":	"/Users/somewhere/Documents/Zwift/Logs/Log.txt",
+	"OpenAI_key":	"abcde",
+	"Language":	"Japanese",
+	"sv_port":	1118
+}
+
